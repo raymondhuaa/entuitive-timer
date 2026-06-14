@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entuitive Hours Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #E87722;
+    --orange-dark: #c96510;
+    --orange-light: #FFF3E8;
+    --grey-dark: #2C2C2A;
+    --grey-mid: #444441;
+    --grey-muted: #888780;
+    --grey-light: #F1EFE8;
+    --grey-border: #D3D1C7;
+    --white: #ffffff;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --green-border: #C0DD97;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --red-border: #F7C1C1;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--white);
+    color: var(--grey-dark);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .container { width: 100%; max-width: 480px; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+  .logo-bar { width: 4px; height: 28px; background: var(--orange); border-radius: 2px; }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--grey-dark); letter-spacing: 1px; }
+  .logo-sub { font-size: 12px; color: var(--grey-muted); font-weight: 400; margin-left: 2px; }
+
+  .setup-card {
+    background: var(--grey-light);
+    border: 1px solid var(--grey-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .setup-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--grey-muted);
+    margin-bottom: 10px;
+  }
+  .setup-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .setup-row:last-of-type { margin-bottom: 0; }
+  .setup-row input {
+    flex: 1;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--grey-border);
+    background: var(--white);
+    color: var(--grey-dark);
+    font-family: inherit;
+    outline: none;
+  }
+  .setup-row input:focus { border-color: var(--orange); }
+  .setup-row input::placeholder { color: var(--grey-muted); }
+  .btn-save {
+    background: var(--orange);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: var(--orange-dark); }
+  .setup-hint { font-size: 11px; color: var(--grey-muted); margin-top: 10px; line-height: 1.5; }
+  .setup-hint a { color: var(--orange); text-decoration: none; }
+
+  .connected {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--green);
+    background: var(--green-light);
+    border: 1px solid var(--green-border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 1.25rem;
+    width: fit-content;
+  }
+  .connected-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+  .main-card {
+    background: var(--white);
+    border: 1px solid var(--grey-border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .card-top {
+    background: var(--grey-dark);
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+  .big-clock {
+    font-size: 64px;
+    font-weight: 300;
+    color: var(--white);
+    letter-spacing: 4px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    font-family: 'SF Mono', 'Fira Mono', monospace;
+  }
+  .big-clock span { color: var(--orange); }
+  .day-str {
+    font-size: 13px;
+    color: var(--grey-muted);
+    margin-top: 10px;
+  }
+  .clockin-str {
+    font-size: 12px;
+    color: var(--orange);
+    margin-top: 4px;
+    min-height: 16px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-top: 12px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .pill-idle { background: rgba(255,255,255,0.08); color: var(--grey-muted); }
+  .pill-active { background: rgba(232,119,34,0.18); color: #f5a05a; }
+  .pill-paused { background: rgba(255,255,255,0.08); color: var(--grey-muted); }
+  .pill-done { background: rgba(59,109,17,0.25); color: #7fc94a; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .card-body { padding: 1.25rem 1.5rem; }
+
+  .project-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .project-row label { font-size: 13px; color: var(--grey-muted); white-space: nowrap; }
+  .project-row select {
+    flex: 1;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--grey-border);
+    background: var(--white);
+    color: var(--grey-dark);
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+  }
+  .project-row select:focus { border-color: var(--orange); }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 1.25rem; }
+  .btn {
+    flex: 1;
+    padding: 13px 0;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.3; pointer-events: none; }
+  .btn-start { background: var(--orange); color: var(--white); }
+  .btn-start:hover { background: var(--orange-dark); }
+  .btn-pause { background: var(--grey-dark); color: var(--white); }
+  .btn-pause:hover { background: var(--grey-mid); }
+  .btn-end { background: var(--grey-light); color: var(--grey-dark); border: 1px solid var(--grey-border); }
+  .btn-end:hover { background: var(--grey-border); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .stat { background: var(--grey-light); border-radius: 10px; padding: 10px 12px; }
+  .stat-label { font-size: 11px; color: var(--grey-muted); margin-bottom: 3px; }
+  .stat-val { font-size: 15px; font-weight: 600; color: var(--grey-dark); font-variant-numeric: tabular-nums; }
+
+  .break-section { display: none; border-top: 1px solid var(--grey-light); padding-top: 1rem; margin-top: 0.5rem; }
+  .break-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--grey-muted); margin-bottom: 8px; }
+  .break-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--grey-muted); padding: 4px 0; border-bottom: 1px solid var(--grey-light); }
+  .break-item:last-child { border-bottom: none; }
+
+  .banner {
+    display: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 1rem;
+    line-height: 1.5;
+  }
+  .banner-ok { background: var(--green-light); border: 1px solid var(--green-border); color: var(--green); }
+  .banner-err { background: var(--red-light); border: 1px solid var(--red-border); color: var(--red); }
+
+  .reconfigure { font-size: 11px; color: var(--grey-muted); text-align: center; margin-top: 1rem; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo-bar"></div>
+    <div>
+      <span class="logo-text">ENTUITIVE</span><span class="logo-sub"> · Hours Tracker</span>
+    </div>
+  </div>
+
+  <div class="setup-card" id="setupCard">
+    <div class="setup-title">Notion connection</div>
+    <div class="setup-row">
+      <input type="password" id="tokenInput" placeholder="Notion API token  (ntn_...)">
+      <button class="btn-save" onclick="saveToken()">Save</button>
+    </div>
+    <div class="setup-row">
+      <input type="text" id="dbInput" placeholder="Sessions database ID">
+      <button class="btn-save" onclick="saveDb()">Save</button>
+    </div>
+    <div class="setup-hint">
+      Get your token at <a href="https://www.notion.so/my-integrations" target="_blank">notion.so/my-integrations</a>. Database ID is the 32-char string in your Sessions database URL.
+    </div>
+  </div>
+
+  <div class="connected" id="connectedBadge">
+    <span class="connected-dot"></span> Connected to Notion
+  </div>
+
+  <div class="main-card">
+    <div class="card-top">
+      <div class="big-clock" id="bigClock">00<span>:</span>00<span>:</span>00</div>
+      <div class="day-str" id="dayStr">—</div>
+      <div class="clockin-str" id="clockInStr"></div>
+      <div class="status-pill pill-idle" id="statusPill">
+        <span class="status-dot"></span>
+        <span id="statusTxt">Ready</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="project-row">
+        <label for="projSelect">Project</label>
+        <select id="projSelect">
+          <option>NYGH LTC</option>
+          <option>Humber College</option>
+          <option>Woodsworth College</option>
+          <option>Pattulo Apartments</option>
+          <option>CFB Borden</option>
+          <option>West Park UHN</option>
+          <option>SWRC</option>
+          <option>Crescent School</option>
+          <option>CBU CDI</option>
+          <option>Country Day School</option>
+          <option>Conestoga College</option>
+          <option>Wallace Emerson</option>
+          <option>Yonge & Roselawn</option>
+          <option>General / Admin</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-start" id="btnStart" onclick="handleStart()">▶ Start</button>
+        <button class="btn btn-pause" id="btnPause" onclick="handlePause()" disabled>⏸ Pause</button>
+        <button class="btn btn-end" id="btnEnd" onclick="handleEnd()" disabled>✓ End day</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Work time</div>
+          <div class="stat-val" id="statWork">0h 0m</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Break time</div>
+          <div class="stat-val" id="statBreak">0h 0m</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Breaks</div>
+          <div class="stat-val" id="statBreakCount">0</div>
+        </div>
+      </div>
+
+      <div class="break-section" id="breakSection">
+        <div class="break-title">Break log</div>
+        <div id="breakList"></div>
+      </div>
+
+      <div class="banner banner-ok" id="bannerOk"></div>
+      <div class="banner banner-err" id="bannerErr"></div>
+
+      <div class="reconfigure" id="reconfigureLink" style="display:none" onclick="showSetup()">Reconfigure Notion connection</div>
+    </div>
+  </div>
+
+</div>
+<script>
+  const LS = {
+    get: k => localStorage.getItem(k) || '',
+    set: (k, v) => localStorage.setItem(k, v)
+  };
+
+  let state = 'idle';
+  let startTs = null, pauseTs = null;
+  let totalPausedMs = 0;
+  let breaks = [];
+  let ticker = null;
+
+  function init() {
+    updateDayStr();
+    const t = LS.get('en_token'), d = LS.get('en_db');
+    if (t) document.getElementById('tokenInput').value = '••••••••••••••••';
+    if (d) document.getElementById('dbInput').value = d;
+    if (t && d) {
+      document.getElementById('setupCard').style.display = 'none';
+      document.getElementById('connectedBadge').style.display = 'flex';
+      document.getElementById('reconfigureLink').style.display = 'block';
+    }
+  }
+
+  function saveToken() {
+    const v = document.getElementById('tokenInput').value.trim();
+    if (v && !v.startsWith('•')) LS.set('en_token', v);
+    checkConnected();
+  }
+  function saveDb() {
+    const v = document.getElementById('dbInput').value.trim();
+    if (v) LS.set('en_db', v);
+    checkConnected();
+  }
+  function checkConnected() {
+    if (LS.get('en_token') && LS.get('en_db')) {
+      document.getElementById('setupCard').style.display = 'none';
+      document.getElementById('connectedBadge').style.display = 'flex';
+      document.getElementById('reconfigureLink').style.display = 'block';
+    }
+  }
+  function showSetup() {
+    document.getElementById('setupCard').style.display = 'block';
+    document.getElementById('dbInput').value = LS.get('en_db');
+  }
+
+  function updateDayStr() {
+    document.getElementById('dayStr').textContent = new Date().toLocaleDateString('en-CA', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+
+  function fmtClock(ms) {
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return `${String(h).padStart(2,'0')}<span>:</span>${String(m).padStart(2,'0')}<span>:</span>${String(sec).padStart(2,'0')}`;
+  }
+  function fmtHM(ms) {
+    const m = Math.round(ms / 60000);
+    return `${Math.floor(m / 60)}h ${m % 60}m`;
+  }
+  function fmtTime(ts) {
+    return new Date(ts).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  function workMs() {
+    if (!startTs) return 0;
+    const now = state === 'paused' ? pauseTs : Date.now();
+    return (now - startTs) - totalPausedMs;
+  }
+  function breakMs() {
+    return breaks.reduce((a, b) => a + (b.end - b.start), 0) +
+      (state === 'paused' ? Date.now() - pauseTs : 0);
+  }
+
+  function tick() {
+    document.getElementById('bigClock').innerHTML = fmtClock(workMs());
+    document.getElementById('statWork').textContent = fmtHM(workMs());
+    document.getElementById('statBreak').textContent = fmtHM(breakMs());
+  }
+
+  function setStatus(cls, txt) {
+    const pill = document.getElementById('statusPill');
+    pill.className = 'status-pill ' + cls;
+    document.getElementById('statusTxt').textContent = txt;
+  }
+
+  function handleStart() {
+    startTs = Date.now();
+    state = 'active';
+    ticker = setInterval(tick, 1000);
+    setStatus('pill-active', 'Working');
+    document.getElementById('clockInStr').textContent = 'Clocked in at ' + fmtTime(startTs);
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnPause').disabled = false;
+    document.getElementById('btnEnd').disabled = false;
+    document.getElementById('projSelect').disabled = true;
+  }
+
+  function handlePause() {
+    if (state === 'active') {
+      pauseTs = Date.now();
+      state = 'paused';
+      clearInterval(ticker);
+      setStatus('pill-paused', 'On break');
+      document.getElementById('btnPause').innerHTML = '▶ Resume';
+    } else if (state === 'paused') {
+      const dur = Date.now() - pauseTs;
+      breaks.push({ start: pauseTs, end: Date.now(), dur });
+      totalPausedMs += dur;
+      state = 'active';
+      ticker = setInterval(tick, 1000);
+      setStatus('pill-active', 'Working');
+      document.getElementById('btnPause').innerHTML = '⏸ Pause';
+      document.getElementById('statBreakCount').textContent = breaks.length;
+      renderBreaks();
+    }
+  }
+
+  function renderBreaks() {
+    if (!breaks.length) return;
+    document.getElementById('breakSection').style.display = 'block';
+    document.getElementById('breakList').innerHTML = breaks.map((b, i) =>
+      `<div class="break-item"><span>Break ${i + 1} — ${fmtTime(b.start)}</span><span>${fmtHM(b.dur)}</span></div>`
+    ).join('');
+  }
+
+  async function handleEnd() {
+    clearInterval(ticker);
+    state = 'done';
+    const endTs = Date.now();
+    tick();
+    setStatus('pill-done', 'Day complete');
+    document.getElementById('btnPause').disabled = true;
+    document.getElementById('btnEnd').disabled = true;
+    renderBreaks();
+
+    const token = LS.get('en_token');
+    const dbId = LS.get('en_db').replace(/-/g, '');
+    if (!token || !dbId) {
+      showErr('No Notion credentials found. Use the reconfigure link below to add them.');
+      return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const dayOfWeek = now.toLocaleDateString('en-CA', { weekday: 'long' });
+    const dayType = (now.getDay() === 0 || now.getDay() === 6) ? 'Weekend' : 'Weekday';
+    const proj = document.getElementById('projSelect').value;
+    const hoursWorked = parseFloat((workMs() / 3600000).toFixed(2));
+    const breakMin = Math.round(breakMs() / 60000);
+
+    const body = {
+      parent: { database_id: dbId },
+      properties: {
+        Session: { title: [{ text: { content: `${dayOfWeek} — ${proj}` } }] },
+        Date: { date: { start: dateStr } },
+        'Day Type': { select: { name: dayType } },
+        Project: { select: { name: proj } },
+        'Clock In': { rich_text: [{ text: { content: fmtTime(startTs) } }] },
+        'Clock Out': { rich_text: [{ text: { content: fmtTime(endTs) } }] },
+        'Break (min)': { number: breakMin },
+        'Hours Worked': { number: hoursWorked },
+        Notes: { rich_text: [{ text: { content: breaks.length ? `${breaks.length} break(s) taken` : 'No breaks' } }] }
+      }
+    };
+
+    try {
+      const res = await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showOk(`Saved to Notion ✓  ${hoursWorked}h worked on ${proj}${dayType === 'Weekend' ? ' (weekend)' : ''}.`);
+      } else {
+        showErr(`Notion error: ${data.message || JSON.stringify(data)} — make sure you shared the Sessions database with your Time Tracking integration.`);
+      }
+    } catch (e) {
+      showErr('Could not reach Notion API. Error: ' + e.message);
+    }
+  }
+
+  function showOk(msg) {
+    const b = document.getElementById('bannerOk');
+    b.textContent = msg;
+    b.style.display = 'block';
+  }
+  function showErr(msg) {
+    const b = document.getElementById('bannerErr');
+    b.textContent = msg;
+    b.style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
